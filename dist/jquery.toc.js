@@ -16,32 +16,22 @@ $.fn.toc = function(options) {
   var headingOffsets = [];
   var activeClassName = opts.prefix+'-active';
 
-  var findScrollableElement = function(els) {
-    for (var i = 0, argLength = arguments.length; i < argLength; i++) {
-      var el = arguments[i],
-          $scrollElement = $(el);
-      if ($scrollElement.scrollTop() > 0) {
-        return $scrollElement;
-      } else {
-        $scrollElement.scrollTop(1);
-        var isScrollable = $scrollElement.scrollTop() > 0;
-        $scrollElement.scrollTop(0);
-        if (isScrollable) {
-          return $scrollElement;
-        }
-      }
-    }
-    return [];
-  };
-  var scrollable = findScrollableElement(opts.container, 'body', 'html');
+  var scrollable = 'html, body';
+  $('html, body').attr('scrollTop', 1);
+  if ($('html').attr('scrollTop') == 1) {
+    scrollable = 'html';
+  } else if ($('body').attr('scrollTop') == 1) {
+    scrollable = 'body';
+  }
+  $('html, body').attr('scrollTop', 0);
 
   var scrollTo = function(e) {
     if (opts.smoothScrolling) {
       e.preventDefault();
       var elScrollTo = $(e.target).attr('href');
       var $el = $(elScrollTo);
-      
-      scrollable.animate({ scrollTop: $el.offset().top }, 400, 'swing', function() {
+
+      $(scrollable).animate({ scrollTop: $el.offset().top }, 400, 'swing', function() {
         location.hash = elScrollTo;
       });
     }
@@ -73,6 +63,7 @@ $.fn.toc = function(options) {
 
   return this.each(function() {
     //build TOC
+    var el = $(this);
     var ul = $('<ul/>');
     headings.each(function(i, heading) {
       var $h = $(heading);
@@ -85,7 +76,10 @@ $.fn.toc = function(options) {
       var a = $('<a/>')
       .text($h.text())
       .attr('href', '#' + opts.anchorName(i, heading, opts.prefix))
-      .bind('click', scrollTo);
+      .bind('click', function(e) {
+        scrollTo(e);
+        el.trigger('selected', $(this).attr('href'));
+      });
 
       var li = $('<li/>')
       .addClass(opts.prefix+'-'+$h[0].tagName.toLowerCase())
@@ -93,7 +87,6 @@ $.fn.toc = function(options) {
 
       ul.append(li);
     });
-    var el = $(this);
     el.html(ul);
   });
 };
@@ -108,7 +101,8 @@ jQuery.fn.toc.defaults = {
   highlightOffset: 100,
   anchorName: function(i, heading, prefix) {
     return prefix+i;
-  } 
+  }
+
 };
 
 }(jQuery);
